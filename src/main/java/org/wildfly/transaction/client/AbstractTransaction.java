@@ -59,6 +59,7 @@ public abstract class AbstractTransaction implements Transaction {
 
     private final Object outflowLock = new Object();
     private final long start = System.nanoTime();
+    private volatile boolean readOnly = false;
 
     final List<AssociationListener> associationListeners = new CopyOnWriteArrayList<>();
 
@@ -129,6 +130,20 @@ public abstract class AbstractTransaction implements Transaction {
      * @return the transaction timeout
      */
     public abstract int getTransactionTimeout();
+
+    /**
+     * Return whether this transaction was started or marked as read-only.
+     */
+    public boolean isReadOnly() throws SystemException {
+        return readOnly;
+    }
+
+    /**
+     * Mark or clear read-only status for this transaction.
+     */
+    protected void setReadOnly(final boolean value) {
+        this.readOnly = value;
+    }
 
     /**
      * Get an estimate of the amount of time remaining in this transaction.

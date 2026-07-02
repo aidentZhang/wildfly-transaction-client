@@ -54,6 +54,16 @@ public final class ContextTransactionManager implements TransactionManager {
         begin(CreationListener.CreatedBy.TRANSACTION_MANAGER);
     }
 
+    /**
+     * Begin a transaction and optionally mark it as read-only (Jakarta Transactions 2.1).
+     */
+    public void begin(final boolean isReadOnly) throws NotSupportedException, SystemException {
+        begin(CreationListener.CreatedBy.TRANSACTION_MANAGER);
+        final State state = stateRef.get();
+        final AbstractTransaction tx = state.transaction;
+        if (tx != null) tx.setReadOnly(isReadOnly);
+    }
+
     void begin(CreationListener.CreatedBy createdBy) throws NotSupportedException, SystemException {
         final State state = stateRef.get();
         if (state.transaction != null) {

@@ -92,4 +92,16 @@ public final class ContextTransactionSynchronizationRegistry implements Transact
         }
         transaction.putResource(key, value);
     }
+
+    public boolean isReadOnly() throws IllegalStateException {
+        final AbstractTransaction transaction = ContextTransactionManager.getInstance().getStateRef().get().transaction;
+        if (transaction == null) {
+            throw Log.log.noTransaction();
+        }
+        try {
+            return transaction.isReadOnly();
+        } catch (SystemException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }

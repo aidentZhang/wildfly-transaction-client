@@ -48,6 +48,14 @@ public final class LocalUserTransaction implements UserTransaction, Serializable
         ContextTransactionManager.getInstance().begin(CreationListener.CreatedBy.USER_TRANSACTION);
     }
 
+    /**
+     * Begin a transaction and indicate whether it should be read-only (Jakarta Transactions 2.1).
+     */
+    public void begin(final boolean isReadOnly) throws NotSupportedException, SystemException {
+        checkTransactionStateAvailability();
+        ContextTransactionManager.getInstance().begin(isReadOnly);
+    }
+
     public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
         checkTransactionStateAvailability();
         ContextTransactionManager.getInstance().commit();

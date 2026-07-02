@@ -170,8 +170,51 @@ public final class LocalTransaction extends AbstractTransaction {
 
     public boolean enlistResource(final XAResource xaRes) throws RollbackException, IllegalStateException, SystemException {
         Assert.checkNotNullParam("xaRes", xaRes);
+        // If this transaction is read-only, the TM must attempt to put the resource
+        // into read-only mode via ExtendedXAResource#setReadOnly(Xid). If the
+        // resource cannot be put into read-only mode (or does not support it),
+        // mark the transaction rollback-only and throw RollbackException.
+        if (isReadOnly()) {
+            final Xid xid = getXid();
+            try {
+                final java.lang.reflect.Method m = xaRes.getClass().getMethod("setReadOnly", Xid.class);
+                try {
+                    m.invoke(xaRes, xid);
+                } catch (java.lang.reflect.InvocationTargetException ite) {
+                    final Throwable cause = ite.getCause();
+                    if (cause instanceof XAException) {
+                        try {
+                            setRollbackOnly();
+                        } catch (SystemException ignored) {
+                        }
+                        throw new RollbackException(cause.toString());
+                    }
+                    try {
+                        setRollbackOnly();
+                    } catch (SystemException ignored) {
+                    }
+                    throw new RollbackException(ite.toString());
+                }
+            } catch (NoSuchMethodException e) {
+                // resource does not support read-only; mark rollback-only and fail
+                try {
+                    setRollbackOnly();
+                } catch (SystemException ignored) {
+                }
+                throw new RollbackException("Resource does not support read-only enlistment");
+            } catch (IllegalAccessException e) {
+                try {
+                    setRollbackOnly();
+                } catch (SystemException ignored) {
+                }
+                throw new RollbackException(e.toString());
+            }
+            // resource handled as read-only; do not perform normal enlist
+            return false;
+        }
+
         final int estimatedRemainingTime = getEstimatedRemainingTime();
-        if(estimatedRemainingTime == 0) throw Log.log.cannotEnlistToTimeOutTransaction(xaRes, this);
+        if (estimatedRemainingTime == 0) throw Log.log.cannotEnlistToTimeOutTransaction(xaRes, this);
         try {
             if (!xaRes.setTransactionTimeout(estimatedRemainingTime)) {
                 Log.log.setTimeoutUnsuccessful(estimatedRemainingTime);
