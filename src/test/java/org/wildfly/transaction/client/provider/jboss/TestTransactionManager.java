@@ -45,6 +45,13 @@ public class TestTransactionManager implements TransactionManager {
     }
 
     @Override
+    public void begin(final boolean isReadOnly) {
+        final TestTransaction testTransaction = new TestTransaction();
+        testTransaction.setReadOnly(isReadOnly);
+        current = testTransaction;
+    }
+
+    @Override
     public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
         if (current != null) {
             current.commit();

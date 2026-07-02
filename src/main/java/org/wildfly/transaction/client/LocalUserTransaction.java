@@ -81,6 +81,19 @@ public final class LocalUserTransaction implements UserTransaction, Serializable
         ContextTransactionManager.getInstance().setTransactionTimeout(seconds);
     }
 
+    public boolean isReadOnly() throws IllegalStateException {
+        checkTransactionStateAvailability();
+        final AbstractTransaction tx = ContextTransactionManager.getInstance().getTransaction();
+        if (tx == null) {
+            throw Log.log.noTransaction();
+        }
+        try {
+            return tx.isReadOnly();
+        } catch (SystemException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     public void setAvailability(boolean available) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

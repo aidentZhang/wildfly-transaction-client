@@ -254,6 +254,10 @@ public interface LocalTransactionProvider extends TransactionProvider {
                 throw Assert.unsupported();
             }
 
+            public void begin(final boolean isReadOnly) throws NotSupportedException, SystemException {
+                begin();
+            }
+
             public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
                 throw Log.log.noTransaction();
             }

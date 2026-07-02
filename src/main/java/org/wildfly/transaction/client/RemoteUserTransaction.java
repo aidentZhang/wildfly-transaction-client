@@ -47,6 +47,10 @@ public final class RemoteUserTransaction implements UserTransaction, Serializabl
     }
 
     public void begin() throws NotSupportedException, SystemException {
+        begin(false);
+    }
+
+    public void begin(final boolean isReadOnly) throws NotSupportedException, SystemException {
         final ContextTransactionManager transactionManager = ContextTransactionManager.getInstance();
         if (transactionManager.getTransaction() != null) {
             throw Log.log.nestedNotSupported();
@@ -55,6 +59,12 @@ public final class RemoteUserTransaction implements UserTransaction, Serializabl
         int timeout = stateRef.get().timeout;
         if (timeout == 0) timeout = ContextTransactionManager.getGlobalDefaultTransactionTimeout();
         transactionManager.resume(context.notifyCreationListeners(new RemoteTransaction(authenticationContext, timeout), CreationListener.CreatedBy.USER_TRANSACTION));
+        if (isReadOnly) {
+            final RemoteTransaction remoteTransaction = getMatchingTransaction();
+            if (remoteTransaction != null) {
+                remoteTransaction.setReadOnly(true);
+            }
+        }
     }
 
     public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
@@ -109,6 +119,18 @@ public final class RemoteUserTransaction implements UserTransaction, Serializabl
 
     Object writeReplace() {
         return new SerializedUserTransaction();
+    }
+
+    public boolean isReadOnly() throws IllegalStateException {
+        final RemoteTransaction remoteTransaction = getMatchingTransaction();
+        if (remoteTransaction == null) {
+            throw Log.log.noTransaction();
+        }
+        try {
+            return remoteTransaction.isReadOnly();
+        } catch (SystemException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     static final class State {

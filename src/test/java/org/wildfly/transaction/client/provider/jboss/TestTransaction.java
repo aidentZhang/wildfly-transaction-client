@@ -46,6 +46,8 @@ public class TestTransaction implements Transaction {
 
     State state;
 
+    private boolean readOnly;
+
     Xid xid;
 
     public TestTransaction(Xid xid) {
@@ -101,6 +103,15 @@ public class TestTransaction implements Transaction {
     @Override
     public void rollback() throws IllegalStateException {
         state = State.ROLLED_BACK;
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    void setReadOnly(final boolean readOnly) {
+        this.readOnly = readOnly;
     }
 
     @Override
